@@ -1,92 +1,13 @@
-import { useState } from "react";
 import PropTypes from "prop-types";
+import useRowState from "../hooks/useRowState";
 
 const Row = ({ row, onUpdate, rows, level }) => {
-  const [inputValue, setInputValue] = useState("");
-  const isLeaf = !row.children;
-
-  const calculateVariance = (newValue, originalValue) => {
-    if (originalValue === 0) return 0;
-    return ((newValue - originalValue) / originalValue) * 100;
-  };
-
-  const updateRowValue = (currentRows, rowId, newValue) => {
-    return currentRows.map((r) => {
-      if (r.id === rowId) {
-        const newVariance = calculateVariance(newValue, r.baseValue);
-        return { ...r, value: newValue, variance: newVariance };
-      } else if (r.children) {
-        const updatedChildren = updateRowValue(r.children, rowId, newValue);
-        const newValueSum = updatedChildren.reduce(
-          (sum, child) => sum + child.value,
-          0
-        );
-        const newVariance = calculateVariance(newValueSum, r.baseValue);
-        return {
-          ...r,
-          value: newValueSum,
-          variance: newVariance,
-          children: updatedChildren,
-        };
-      }
-      return r;
-    });
-  };
-
-  const handleAllocationPercentage = () => {
-    const percentage = parseFloat(inputValue);
-    if (!isNaN(percentage)) {
-      const newValue = row.value * (1 + percentage / 100);
-      const updatedRows = updateRowValue(rows, row.id, newValue);
-      onUpdate(updatedRows);
-      setInputValue("");
-    }
-  };
-
-  const handleAllocationValue = () => {
-    const newValue = parseFloat(inputValue);
-    if (!isNaN(newValue)) {
-      if (isLeaf) {
-        const updatedRows = updateRowValue(rows, row.id, newValue);
-        onUpdate(updatedRows);
-      } else {
-        distributeValueToLeaves(newValue);
-      }
-      setInputValue("");
-    }
-  };
-
-  const distributeValueToLeaves = (newValue) => {
-    const totalChildrenValue = row.children.reduce(
-      (sum, child) => sum + child.value,
-      0
-    );
-    const updatedChildren = row.children.map((child) => {
-      const proportion =
-        totalChildrenValue === 0 ? 0 : child.value / totalChildrenValue;
-      const newChildValue = newValue * proportion;
-      const newChildVariance = calculateVariance(
-        newChildValue,
-        child.baseValue
-      );
-      return { ...child, value: newChildValue, variance: newChildVariance };
-    });
-
-    const updatedRows = rows.map((r) => {
-      if (r.id === row.id) {
-        const newVariance = calculateVariance(newValue, r.baseValue);
-        return {
-          ...r,
-          value: newValue,
-          variance: newVariance,
-          children: updatedChildren,
-        };
-      }
-      return r;
-    });
-
-    onUpdate(updatedRows);
-  };
+  const {
+    inputValue,
+    setInputValue,
+    handleAllocationPercentage,
+    handleAllocationValue,
+  } = useRowState(row, onUpdate, rows);
 
   const paddingLeft = { paddingLeft: `${level * 20}px` };
 
