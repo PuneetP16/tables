@@ -4,26 +4,27 @@ import { calculateVariance, updateRowValue } from "../utils/calculations";
 const useRowState = (row, onUpdate, rows) => {
   const [inputValue, setInputValue] = useState("");
 
+  const handleValueUpdate = (newValue) => {
+    const updatedRows = updateRowValue(rows, row.id, newValue);
+    onUpdate(updatedRows);
+    if (row.children) {
+      distributeValueToLeaves(newValue);
+    }
+    setInputValue("");
+  };
+
   const handleAllocationPercentage = () => {
     const percentage = parseFloat(inputValue);
     if (!isNaN(percentage)) {
       const newValue = row.value * (1 + percentage / 100);
-      const updatedRows = updateRowValue(rows, row.id, newValue);
-      onUpdate(updatedRows);
-      setInputValue("");
+      handleValueUpdate(newValue);
     }
   };
 
   const handleAllocationValue = () => {
     const newValue = parseFloat(inputValue);
     if (!isNaN(newValue)) {
-      if (!row.children) {
-        const updatedRows = updateRowValue(rows, row.id, newValue);
-        onUpdate(updatedRows);
-      } else {
-        distributeValueToLeaves(newValue);
-      }
-      setInputValue("");
+      handleValueUpdate(newValue);
     }
   };
 
